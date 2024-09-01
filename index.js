@@ -31,16 +31,14 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-// const client = new MongoClient(uri, {
-//   serverApi: {
-//     version: ServerApiVersion.v1,
-//     strict: true,
-//     deprecationErrors: true,
-//   }
-// });
-
-// Create a new client and connect to MongoDB
-const client = new MongoClient(uri);
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  }
+});
+ 
 
 
 async function run() {
@@ -49,8 +47,17 @@ async function run() {
      await client.connect(); 
 
     const database = client.db("coffeeDB");
-    const coffeeCollection = database.collection("coffee");
-    // const result = await coffeeCollection.insertOne({name:"Roktim", age: 19 });
+    const coffeeCollection = database.collection("coffee"); 
+
+
+    app.get('/coffee', async (req,res)=>{ 
+      
+    const cursor = coffeeCollection.find();
+    const data = await cursor.toArray(); 
+
+    res.send(data)
+
+    })
 
     app.post('/coffee', async(req,res)=>{
        
