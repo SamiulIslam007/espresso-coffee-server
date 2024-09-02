@@ -1,34 +1,30 @@
-//  express 
-const express = require('express'); 
-const cors = require('cors');
+//  express
+const express = require("express");
+const cors = require("cors");
 
 // mongoDB
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 // dotenv
-require('dotenv').config()
-
+require("dotenv").config();
 
 // calling app with express
 const app = express();
 
-// port 
-const port = process.env.PORT || 5000;  
+// port
+const port = process.env.PORT || 5000;
 
-
-// middlewares 
+// middlewares
 app.use(cors());
 app.use(express.json());
 
-
 // routes
-app.get('/', (req,res)=>{
+app.get("/", (req, res) => {
   res.send("Coffee server is running...");
-})
+});
 
 //  connecting mongoDB
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.3qhe6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
-
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -36,44 +32,84 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
- 
-
 
 async function run() {
   try {
-    // Connect the client to the server	  
-     await client.connect(); 
+    // Connect the client to the server
+    await client.connect();
 
+    // selecting the coffee collection
     const database = client.db("coffeeDB");
-    const coffeeCollection = database.collection("coffee"); 
+    const coffeeCollection = database.collection("coffee");
 
+    // Showing all the coffee
+    app.get("/coffee", async (req, res) => {
+      const cursor = coffeeCollection.find();
+      const data = await cursor.toArray();
 
-    app.get('/coffee', async (req,res)=>{ 
-      
-    const cursor = coffeeCollection.find();
-    const data = await cursor.toArray(); 
+      res.send(data);
+    });
 
-    res.send(data)
+    // getting a single coffee data
+    app.get("/coffee/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await coffeeCollection.findOne(query);
+      res.send(result);
+    });
 
-    })
-
-    app.post('/coffee', async(req,res)=>{
-       
+    // inserting a coffee
+    app.post("/coffee", async (req, res) => {
       const newCoffee = req.body;
-      console.log(newCoffee); 
+      console.log(newCoffee);
 
       const result = await coffeeCollection.insertOne(newCoffee);
       res.send(result);
-        
-       
-    })
+    });
+
+    // updating coffee data
+    app.put("/coffee/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log("id", id);
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedCoffee = req.body;
+      const updateDoc = {
+        $set: {
+          name: updatedCoffee.name,
+          chef: updatedCoffee.chef,
+          supplier: updatedCoffee.supplier,
+          taste: updatedCoffee.taste,
+          category: updatedCoffee.category,
+          details: updatedCoffee.details,
+          photo: updatedCoffee.photo,
+        },
+      };
+
+      const result = await coffeeCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    // deleting a coffee
+    app.delete("/coffee/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await coffeeCollection.deleteOne(query);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
 
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
@@ -81,13 +117,7 @@ async function run() {
 }
 run().catch(console.dir);
 
-
-
 // listening the app
-app.listen(port, ()=> {
-    console.log(`Coffee server is running on port ${port}`);
-})
- 
-
-
-
+app.listen(port, () => {
+  console.log(`Coffee server is running on port ${port}`);
+});
