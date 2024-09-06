@@ -15,12 +15,17 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // middlewares
+// CORS configuration
 app.use(cors());
 app.use(express.json());
 
+app.get("/hello", (req, res) => {
+  res.send("Hello........");
+});
+
 // routes
 app.get("/", (req, res) => {
-  res.send("Coffee server is running...");
+  res.send("Coffee server is running.....");
 });
 
 //  connecting mongoDB
@@ -64,7 +69,6 @@ async function run() {
     // inserting a coffee
     app.post("/coffee", async (req, res) => {
       const newCoffee = req.body;
-      console.log(newCoffee);
 
       const result = await coffeeCollection.insertOne(newCoffee);
       res.send(result);
@@ -73,7 +77,6 @@ async function run() {
     // updating coffee data
     app.put("/coffee/:id", async (req, res) => {
       const id = req.params.id;
-      console.log("id", id);
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
       const updatedCoffee = req.body;
