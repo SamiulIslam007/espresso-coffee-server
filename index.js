@@ -41,9 +41,10 @@ async function run() {
     await client.connect();
 
     // selecting the coffee collection
-    const database = client.db("coffeeDB");
-    const coffeeCollection = database.collection("coffee");
+    const coffeeCollection = client.db("coffeeDB").collection("coffee");
 
+    // This is the collection for the registered users
+    const userColllection = client.db("coffeeDB").collection("users");
     // Showing all the coffee
     app.get("/coffee", async (req, res) => {
       const cursor = coffeeCollection.find();
@@ -101,6 +102,54 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await coffeeCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // Registered Users related apis
+
+    // inserting a user to the database
+    app.post("/register", async (req, res) => {
+      const user = req.body;
+      const result = await userColllection.insertOne(user);
+      res.send(result);
+    });
+    // Get all users
+    app.get("/users", async (req, res) => {
+      const cursor = userColllection.find();
+      const users = await cursor.toArray();
+      res.send(users);
+    });
+    // Get a single user
+    app.get("/users/:id", async (req, res) => {
+      const id = req.params;
+      const query = { _id: new ObjectId(id) };
+      const result = await userColllection.findOne(query);
+      res.send(result);
+    });
+
+    // Deleting a user
+    app.delete("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await userColllection.deleteOne(query);
+      res.send(result);
+    });
+    // Patch request
+    app.patch("/users", async (req, res) => {
+      const userInfo = req.body;
+      const filter = { email: userInfo.email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          lastLoggedAt: userInfo.lastLoggedAt,
+        },
+      };
+      const result = await userColllection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+
       res.send(result);
     });
 
